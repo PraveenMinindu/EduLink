@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "656869483",
+    "project_id": "edulink-5f65f",
+    "storage_bucket": "edulink-5f65f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:656869483:android:f79aef4cf05cdb2bb3092e",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1k1BsQN-mOcu1yxKnrhlZjWryq7rtoZs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
