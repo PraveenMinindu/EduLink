@@ -1,0 +1,11 @@
+serviceAccountKey.json
+google-services.json
+.env
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+datasets/
+saved_models/
+*.parquet
+*.csv
