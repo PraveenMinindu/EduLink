@@ -1,9 +1,10 @@
 class ApiConfig {
   static const String _localhost = 'http://localhost:8001';
   static const String _lanIp = 'http://10.116.164.69:8001';
+  static const String _production = 'https://edulink-7i49.onrender.com';
 
-  // Change _lanIp to _localhost when running on emulator
-  static const String baseUrl = _lanIp;
+  // Switch between _lanIp (local), _localhost (emulator), _production (Render)
+  static const String baseUrl = _production;
 
   static const Duration defaultTimeout = Duration(seconds: 30);
 
