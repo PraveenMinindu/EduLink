@@ -1,6 +1,6 @@
 class AppConstants {
   // API
-  static const String baseUrl = "http://10.116.164.69:8002";
+  static const String baseUrl = "https://edulink-7i49.onrender.com";
   // For physical device use your computer's IP:
   // static const String baseUrl = "http://192.168.1.xxx:8000";
 
