@@ -1,12 +1,11 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
+// import 'package:printing/printing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../services/pdf_generator.dart';
+// import '../../services/pdf_generator.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
-//import 'package:url_launcher/url_launcher.dart';
 import '../../config/app_colors.dart';
 import '../../models/career_report_model.dart';
 import '../../services/report_service.dart';
@@ -38,66 +37,8 @@ class _ReportScreenState extends State<ReportScreen> {
     _load();
   }
 
-  Future<void> _generatePdf(CareerReport r) async {
-    try {
-      final assessmentId = widget.studentId;
-      final studentId = assessmentId.contains('_')
-          ? assessmentId.split('_')[0]
-          : assessmentId;
-
-      // Fetch student profile
-      final studentDoc = await FirebaseFirestore.instance
-          .collection('students')
-          .doc(studentId)
-          .get();
-      final studentProfile = studentDoc.exists ? studentDoc.data() ?? {} : {};
-
-      // Fetch writing sample
-      final writingDoc = await FirebaseFirestore.instance
-          .collection('writing_samples')
-          .doc(assessmentId)
-          .get();
-      final writingText = writingDoc.exists
-          ? (writingDoc.data()?['text'] ?? '')
-          : '';
-
-      // Fetch MCQ answers
-      final mcqDoc = await FirebaseFirestore.instance
-          .collection('mcq_responses')
-          .doc(assessmentId)
-          .get();
-      final mcqRaw = mcqDoc.exists ? mcqDoc.data() ?? {} : {};
-      final mcqAnswers = <String, int>{};
-      for (int i = 1; i <= 40; i++) {
-        final val = mcqRaw['Q$i'];
-        if (val != null) mcqAnswers['Q$i'] = (val as num).toInt();
-      }
-
-      // Generate PDF
-      final pdfBytes = await PdfGenerator.generate(
-        report: r,
-        assessmentId: assessmentId,
-        studentProfile: Map<String, dynamic>.from(studentProfile),
-        writingText: writingText.toString(),
-        mcqAnswers: mcqAnswers,
-      );
-
-      // Open print preview
-      await Printing.layoutPdf(
-        onLayout: (_) async => pdfBytes,
-        name: 'EduLink_Report_$assessmentId.pdf',
-      );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('PDF generation failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  // PDF generation disabled for APK build — available in local dev only
+  // Future<void> _generatePdf(CareerReport r) async { ... }
 
   Future<void> _load() async {
     final r = await ReportService.getReport(widget.studentId);
@@ -113,7 +54,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return AppColors.rose;
   }
 
-  // ── Share helpers ─────────────────────────────────────────
   String get _shareText =>
       'I just completed my EduLink AI career assessment!\n\n'
       '🎯 Recommended Career: ${_report?.finalRole ?? ""}\n'
@@ -146,7 +86,6 @@ class _ReportScreenState extends State<ReportScreen> {
       backgroundColor: AppColors.surface,
       body: Column(
         children: [
-          // ── Hero header ───────────────────────────────────
           Container(
             color: AppColors.navy,
             padding: const EdgeInsets.fromLTRB(22, 54, 22, 20),
@@ -278,14 +217,11 @@ class _ReportScreenState extends State<ReportScreen> {
               ],
             ),
           ),
-
-          // ── Scrollable body ───────────────────────────────
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Career clusters
                   _sectionHeader("Career Clusters"),
                   Container(
                     width: double.infinity,
@@ -318,8 +254,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Holland interest code
                   if (r.interestCode.isNotEmpty) ...[
                     _sectionHeader("Holland Interest Code"),
                     Container(
@@ -397,8 +331,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-
-                  // RIASEC radar
                   if (r.riasec.isNotEmpty) ...[
                     _sectionHeader("RIASEC Personality Radar"),
                     Container(
@@ -480,8 +412,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-
-                  // Top composites
                   if (r.topComposites.isNotEmpty) ...[
                     _sectionHeader("Top Psychological Strengths"),
                     Container(
@@ -517,8 +447,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-
-                  // Communication style
                   _sectionHeader(
                     "Communication Style",
                     action: "Get tips",
@@ -580,8 +508,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Salary estimate
                   _sectionHeader("Salary Estimate"),
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -641,8 +567,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Skill gap
                   _sectionHeader(
                     "Skill Gap",
                     action: "Full report",
@@ -680,11 +604,8 @@ class _ReportScreenState extends State<ReportScreen> {
                         const SizedBox(height: 5),
                         Text(
                           r.writingCreativity < 65
-                              ? "Creativity (${r.writingCreativity.toInt()}) and Confidence "
-                                    "(${r.writingConfidence.toInt()}) are below the recommended "
-                                    "threshold for ${r.finalRole}."
-                              : "Your writing scores are solid. Keep building technical "
-                                    "skills for ${r.finalRole}.",
+                              ? "Creativity (${r.writingCreativity.toInt()}) and Confidence (${r.writingConfidence.toInt()}) are below the recommended threshold for ${r.finalRole}."
+                              : "Your writing scores are solid. Keep building technical skills for ${r.finalRole}.",
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.text2,
@@ -726,8 +647,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Quick actions
                   _sectionHeader("Quick Actions"),
                   Row(
                     children: [
@@ -806,7 +725,7 @@ class _ReportScreenState extends State<ReportScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: _actionBtn(
-                          "writing analysis",
+                          "Writing analysis",
                           Icons.edit_note,
                           () => Navigator.push(
                             context,
@@ -829,11 +748,20 @@ class _ReportScreenState extends State<ReportScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
+                      // PDF disabled in APK — shows info snackbar
                       Expanded(
                         child: _actionBtn(
                           "Download PDF",
                           Icons.picture_as_pdf_outlined,
-                          () => _generatePdf(r),
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'PDF available in desktop version',
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -877,7 +805,6 @@ class _ReportScreenState extends State<ReportScreen> {
     );
   }
 
-  // ── RIASEC Radar ──────────────────────────────────────────
   static const _riasecColors = {
     'R': AppColors.riasecR,
     'I': AppColors.riasecI,
@@ -892,7 +819,6 @@ class _ReportScreenState extends State<ReportScreen> {
     final dataEntries = order
         .map((l) => RadarEntry(value: (riasec[l] ?? 50).clamp(0.0, 100.0)))
         .toList();
-
     return RadarChart(
       RadarChartData(
         radarShape: RadarShape.polygon,
@@ -980,7 +906,6 @@ class _ReportScreenState extends State<ReportScreen> {
     final c1 = _riasecColors[top1.key] ?? AppColors.navy;
     final c2 = _riasecColors[top2.key] ?? AppColors.navy;
     final cb = _riasecColors[bottom.key] ?? AppColors.riasecS;
-
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -1005,15 +930,18 @@ class _ReportScreenState extends State<ReportScreen> {
               text: top2.key,
               style: TextStyle(fontWeight: FontWeight.w700, color: c2),
             ),
-            TextSpan(text: ' (${top2.value.toStringAsFixed(0)}) '),
-            TextSpan(text: '— ${names[top1.key]} and ${names[top2.key]}, '),
-            TextSpan(text: 'confirming strong match for $role. Lower '),
+            TextSpan(
+              text:
+                  ' (${top2.value.toStringAsFixed(0)}) — ${names[top1.key]} and ${names[top2.key]}, confirming strong match for $role. Lower ',
+            ),
             TextSpan(
               text: bottom.key,
               style: TextStyle(fontWeight: FontWeight.w700, color: cb),
             ),
-            TextSpan(text: ' (${bottom.value.toStringAsFixed(0)}) '),
-            TextSpan(text: 'reflects ${names[bottom.key]} is less dominant.'),
+            TextSpan(
+              text:
+                  ' (${bottom.value.toStringAsFixed(0)}) reflects ${names[bottom.key]} is less dominant.',
+            ),
           ],
         ),
       ),
@@ -1032,7 +960,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return code.split('').map((l) => labels[l] ?? l).join(' · ');
   }
 
-  // ── Composite tabs ────────────────────────────────────────
   static const _technicalKeys = [
     'Technical_ProblemSolving',
     'Tech_Adaptability',
@@ -1126,7 +1053,6 @@ class _ReportScreenState extends State<ReportScreen> {
     }).toList();
   }
 
-  // ── Helper widgets ────────────────────────────────────────
   Widget _sectionHeader(
     String title, {
     String? action,
@@ -1278,7 +1204,6 @@ class _ReportScreenState extends State<ReportScreen> {
 
   String _fmt(int n) => n >= 1000 ? '${(n / 1000).toStringAsFixed(0)}K' : '$n';
 
-  // ── Share bottom sheet ────────────────────────────────────
   void _showShare(BuildContext context, CareerReport r) {
     showModalBottomSheet(
       context: context,
@@ -1291,7 +1216,6 @@ class _ReportScreenState extends State<ReportScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
             Container(
               width: 40,
               height: 4,
@@ -1301,8 +1225,6 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Title
             Text(
               "Share your report",
               style: GoogleFonts.playfairDisplay(
@@ -1317,12 +1239,9 @@ class _ReportScreenState extends State<ReportScreen> {
               style: TextStyle(fontSize: 12, color: AppColors.text3),
             ),
             const SizedBox(height: 24),
-
-            // Share buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                // Copy link
                 _shareBtn(
                   bg: const Color(0xFF1877F2),
                   icon: Icons.copy_rounded,
@@ -1337,7 +1256,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     );
                   },
                 ),
-                // WhatsApp — opens real WhatsApp app
                 _shareBtn(
                   bg: const Color(0xFF25D366),
                   icon: Icons.chat_rounded,
@@ -1347,7 +1265,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     _launchWhatsApp();
                   },
                 ),
-                // Email — opens real email app
                 _shareBtn(
                   bg: const Color(0xFFEA4335),
                   icon: Icons.email_rounded,
@@ -1357,7 +1274,6 @@ class _ReportScreenState extends State<ReportScreen> {
                     _launchEmail();
                   },
                 ),
-                // Save PDF
                 _shareBtn(
                   bg: AppColors.navy,
                   icon: Icons.picture_as_pdf_rounded,
@@ -1367,8 +1283,6 @@ class _ReportScreenState extends State<ReportScreen> {
               ],
             ),
             const SizedBox(height: 24),
-
-            // Preview of what will be shared
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -1401,8 +1315,6 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Close
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -1457,31 +1369,14 @@ class _ReportScreenState extends State<ReportScreen> {
     ),
   );
 
-  // ── AI Explanation ─────────────────────────────────────────
   void _showExplanation(BuildContext context, String explanation) {
     final r = _report;
     if (r == null) return;
-
-    final sections = r.reasoningSections;
-
-    // Debug trace
-    debugPrint('=== REASONING DEBUG ===');
-    debugPrint('sections.length: ${sections.length}');
-    debugPrint('sections.keys: ${sections.keys.toList()}');
-    if (sections.isNotEmpty) {
-      final first = sections.entries.first;
-      debugPrint('first key: ${first.key}');
-      debugPrint('first value type: ${first.value.runtimeType}');
-      debugPrint('first value: ${first.value}');
-    }
-    debugPrint('finalExplanation length: ${explanation.length}');
-    debugPrint('======================');
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => _ReasoningScreen(
-          sections: sections,
+          sections: r.reasoningSections,
           fallbackExplanation: explanation,
           studentRole: r.finalRole,
           finalScore: r.finalScore,
@@ -1539,12 +1434,10 @@ class _ReasoningScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasSections = sections.isNotEmpty;
-
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: Column(
         children: [
-          // Header
           Container(
             color: AppColors.navy,
             padding: const EdgeInsets.fromLTRB(22, 54, 22, 20),
@@ -1615,8 +1508,6 @@ class _ReasoningScreen extends StatelessWidget {
               ],
             ),
           ),
-
-          // Body — scrollable sections
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
@@ -1643,8 +1534,6 @@ class _ReasoningScreen extends StatelessWidget {
         }
       }
     });
-
-    // Advisory note at bottom
     widgets.add(_advisoryNote());
     return widgets;
   }
@@ -1652,7 +1541,6 @@ class _ReasoningScreen extends StatelessWidget {
   Widget _sectionCard(String key, String title, String text) {
     final icon = _sectionIcons[key] ?? Icons.info_outline;
     final color = _sectionColors[key] ?? AppColors.navy;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1702,12 +1590,10 @@ class _ReasoningScreen extends StatelessWidget {
   }
 
   Widget _buildFallback() {
-    // Show plain finalExplanation if no structured sections
     final lines = fallbackExplanation
         .split('\n')
         .where((l) => l.trim().isNotEmpty)
         .toList();
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1724,7 +1610,7 @@ class _ReasoningScreen extends StatelessWidget {
             child: Text(
               isHeader ? line.replaceAll('[', '').replaceAll(']', '') : line,
               style: TextStyle(
-                fontSize: isHeader ? 13 : 13,
+                fontSize: 13,
                 fontWeight: isHeader ? FontWeight.w700 : FontWeight.normal,
                 color: isHeader ? AppColors.navy : AppColors.text2,
                 height: 1.6,
@@ -1736,34 +1622,25 @@ class _ReasoningScreen extends StatelessWidget {
     );
   }
 
-  Widget _advisoryNote() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outline, color: AppColors.text3, size: 16),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              "This reasoning is generated by EduLink's AI Reasoning Layer, "
-              "which synthesises outputs from seven independent models. "
-              "It is intended to support career decision-making and should "
-              "be considered alongside professional guidance.",
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.text3,
-                height: 1.5,
-              ),
-            ),
+  Widget _advisoryNote() => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: AppColors.border),
+    ),
+    child: const Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.info_outline, color: AppColors.text3, size: 16),
+        SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            "This reasoning is generated by EduLink's AI Reasoning Layer, which synthesises outputs from seven independent models. It is intended to support career decision-making and should be considered alongside professional guidance.",
+            style: TextStyle(fontSize: 11, color: AppColors.text3, height: 1.5),
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
 }
