@@ -1,8 +1,11 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
-// import 'package:printing/printing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import '../../services/pdf_generator.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
+import '../../services/pdf_generator.dart';
+
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -37,8 +40,75 @@ class _ReportScreenState extends State<ReportScreen> {
     _load();
   }
 
-  // PDF generation disabled for APK build — available in local dev only
-  // Future<void> _generatePdf(CareerReport r) async { ... }
+  Future<void> _generatePdf(CareerReport r) async {
+    try {
+      // Show loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Generating PDF...')),
+      );
+
+      final assessmentId = widget.studentId;
+      final studentId = assessmentId.contains('_')
+          ? assessmentId.split('_')[0]
+          : assessmentId;
+
+      // Fetch student profile
+      final studentDoc = await FirebaseFirestore.instance
+          .collection('students').doc(studentId).get();
+      final studentProfile = studentDoc.exists ? studentDoc.data() ?? {} : {};
+
+      // Fetch writing sample
+      final writingDoc = await FirebaseFirestore.instance
+          .collection('writing_samples').doc(assessmentId).get();
+      final writingText = writingDoc.exists
+          ? (writingDoc.data()?['text'] ?? '') : '';
+
+      // Fetch MCQ answers
+      final mcqDoc = await FirebaseFirestore.instance
+          .collection('mcq_responses').doc(assessmentId).get();
+      final mcqRaw = mcqDoc.exists ? mcqDoc.data() ?? {} : {};
+      final mcqAnswers = <String, int>{};
+      for (int i = 1; i <= 40; i++) {
+        final val = mcqRaw['Q$i'];
+        if (val != null) mcqAnswers['Q$i'] = (val as num).toInt();
+      }
+
+      // Generate PDF bytes
+      final pdfBytes = await PdfGenerator.generate(
+        report: r,
+        assessmentId: assessmentId,
+        studentProfile: Map<String, dynamic>.from(studentProfile),
+        writingText: writingText.toString(),
+        mcqAnswers: mcqAnswers,
+      );
+
+      // Save to device storage
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/EduLink_Report_$assessmentId.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      // Open PDF with device viewer
+      final result = await OpenFilex.open(file.path);
+
+      if (mounted && result.type != ResultType.done) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF saved to: ${file.path}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF generation failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _load() async {
     final r = await ReportService.getReport(widget.studentId);
@@ -748,20 +818,11 @@ class _ReportScreenState extends State<ReportScreen> {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // PDF disabled in APK — shows info snackbar
                       Expanded(
                         child: _actionBtn(
                           "Download PDF",
                           Icons.picture_as_pdf_outlined,
-                          () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'PDF available in desktop version',
-                                ),
-                              ),
-                            );
-                          },
+                          () => _generatePdf(r),
                         ),
                       ),
                     ],
